@@ -193,8 +193,8 @@ jobs:
             SDKM="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | sort | tail -1)"
           fi
           yes | "$SDKM" --licenses > /dev/null || true
-          "$SDKM" "ndk;28.2.13676358" > /dev/null
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+          "$SDKM" "ndk;30.0.16248370" > /dev/null
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/30.0.16248370" >> "$GITHUB_ENV"
 
       - name: Build
         env:
