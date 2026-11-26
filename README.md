@@ -8,6 +8,7 @@ No restart. No interruption. No menu trip. The level keeps running from exactly 
 
 - One keybind (default: `P`) toggles the current run into Practice Mode mid-level.
 - Uses the game's own native practice-mode transition (`PlayLayer::togglePracticeMode`), the same code path as the pause menu's Practice Mode button — so checkpoints, practice music, and all vanilla behavior apply.
+- Like the vanilla Practice Mode button, enabling Practice Mode also toggles the hitbox (debug draw) overlay on for the run — this is stock game behavior, kept as-is.
 - Fully customizable through Geode's built-in keybind settings.
 - No HUD, popups, sounds, or custom UI.
 
@@ -96,6 +97,7 @@ Automated tests cover the decision logic only. Verify the following in-game:
 | Hold P (key repeat) | Single transition, no flicker |
 | Quit level, start another, press P | Works again |
 | Die after switching | Respawns at the practice checkpoint like vanilla practice mode |
+| Hitbox overlay | Toggled on by the practice-mode transition, same as the pause menu button |
 
 ## Known limitations
 
