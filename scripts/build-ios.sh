@@ -23,9 +23,9 @@ fi
 
 BUILD_DIR="${BUILD_DIR:-build-ios}"
 
-EXTRA_CMAKE_ARGS=()
+EXTRA_CMAKE_ARGS=""
 if [ -n "${GEODE_DONT_INSTALL_MODS:-}" ]; then
-    EXTRA_CMAKE_ARGS+=("-DGEODE_DONT_INSTALL_MODS=ON")
+    EXTRA_CMAKE_ARGS="-DGEODE_DONT_INSTALL_MODS=ON"
 fi
 
 cmake -B "$BUILD_DIR" -G Ninja \
@@ -35,7 +35,7 @@ cmake -B "$BUILD_DIR" -G Ninja \
     -DCMAKE_OSX_SYSROOT=iphoneos \
     -DCMAKE_OSX_ARCHITECTURES=arm64 \
     -DGEODE_SDK="$GEODE_SDK" \
-    "${EXTRA_CMAKE_ARGS[@]}"
+    $EXTRA_CMAKE_ARGS
 
 cmake --build "$BUILD_DIR" -j"$(sysctl -n hw.ncpu)"
 

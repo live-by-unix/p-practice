@@ -20,12 +20,12 @@ if [ -z "${GEODE_SDK:-}" ] || [ ! -d "$GEODE_SDK" ]; then
     exit 1
 fi
 
-EXTRA_CMAKE_ARGS=()
+EXTRA_CMAKE_ARGS=""
 if [ -n "${GEODE_DONT_INSTALL_MODS:-}" ]; then
-    EXTRA_CMAKE_ARGS+=("-DGEODE_DONT_INSTALL_MODS=ON")
+    EXTRA_CMAKE_ARGS="-DGEODE_DONT_INSTALL_MODS=ON"
 fi
 
-cmake -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DGEODE_SDK="$GEODE_SDK" "${EXTRA_CMAKE_ARGS[@]}"
+cmake -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE="$BUILD_TYPE" -DGEODE_SDK="$GEODE_SDK" $EXTRA_CMAKE_ARGS
 cmake --build "$BUILD_DIR" --config "$BUILD_TYPE" -j"$(nproc 2>/dev/null || sysctl -n hw.ncpu)"
 
 echo "Built: $BUILD_DIR/livebyunix.p.geode"

@@ -36,9 +36,9 @@ fi
 TOOLCHAIN="$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake"
 JOBS="$(nproc 2>/dev/null || sysctl -n hw.ncpu)"
 
-EXTRA_CMAKE_ARGS=()
+EXTRA_CMAKE_ARGS=""
 if [ -n "${GEODE_DONT_INSTALL_MODS:-}" ]; then
-    EXTRA_CMAKE_ARGS+=("-DGEODE_DONT_INSTALL_MODS=ON")
+    EXTRA_CMAKE_ARGS="-DGEODE_DONT_INSTALL_MODS=ON"
 fi
 
 for ABI in arm64-v8a armeabi-v7a; do
@@ -56,7 +56,7 @@ for ABI in arm64-v8a armeabi-v7a; do
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_CXX_SCAN_FOR_MODULES=OFF \
         -DGEODE_SDK="$GEODE_SDK" \
-        "${EXTRA_CMAKE_ARGS[@]}"
+        $EXTRA_CMAKE_ARGS
     cmake --build "$BUILD_DIR" -j"$JOBS"
     echo "Built: $BUILD_DIR/livebyunix.p.geode"
 done
