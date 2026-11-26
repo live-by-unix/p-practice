@@ -185,12 +185,13 @@ jobs:
           chmod +x /tmp/geode-cli/geode
           echo "/tmp/geode-cli" >> "$GITHUB_PATH"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Install Android NDK
         run: |
-          SDKM="$(find "$ANDROID_HOME" -name sdkmanager -type f | head -1)"
+          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKM" ]; then
+            SDKM="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | sort | tail -1)"
+          fi
           yes | "$SDKM" --licenses > /dev/null || true
           "$SDKM" "ndk;27.2.12479018" > /dev/null
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.2.12479018" >> "$GITHUB_ENV"
