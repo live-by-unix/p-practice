@@ -11,7 +11,7 @@ if (APPLE)
     set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 endif()
 
-project(P VERSION 1.0.2)
+project(P VERSION 1.0.3)
 
 add_library(${PROJECT_NAME} SHARED
     src/main.cpp
