@@ -1,0 +1,230 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout Geode SDK v6.0.0
+        uses: actions/checkout@v4
+        with:
+          repository: geode-sdk/sdk
+          ref: v6.0.0
+          path: geode-sdk
+
+      - name: Download Geode binaries (macOS)
+        run: |
+          mkdir -p geode-sdk/bin/6.0.0
+          curl -fsSL -o /tmp/geode-mac.zip \
+            https://github.com/geode-sdk/geode/releases/download/v6.0.0/geode-v6.0.0-mac.zip
+          unzip -o /tmp/geode-mac.zip -d geode-sdk/bin/6.0.0/
+
+      - name: Install Geode CLI
+        run: |
+          curl -fsSL -o /tmp/geode-cli.zip \
+            https://github.com/geode-sdk/cli/releases/download/v4.0.2/geode-cli-v4.0.2-mac.zip
+          unzip -o /tmp/geode-cli.zip -d /tmp/geode-cli
+          echo "/tmp/geode-cli" >> "$GITHUB_PATH"
+          chmod +x /tmp/geode-cli/geode
+
+      - name: Build and test
+        env:
+          GEODE_SDK: ${{ github.workspace }}/geode-sdk
+          GEODE_DONT_INSTALL_MODS: "ON"
+        run: |
+          ./scripts/build-macos.sh
+          ctest --test-dir build --output-on-failure
+
+      - name: Stage artifact
+        run: |
+          mkdir -p dist/release
+          cp build/livebyunix.p.geode dist/release/livebyunix.p-macos.geode
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: dist/release/
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout Geode SDK v6.0.0
+        uses: actions/checkout@v4
+        with:
+          repository: geode-sdk/sdk
+          ref: v6.0.0
+          path: geode-sdk
+
+      - name: Download Geode binaries (iOS)
+        run: |
+          mkdir -p geode-sdk/bin/6.0.0
+          curl -fsSL -o /tmp/geode-ios.zip \
+            https://github.com/geode-sdk/geode/releases/download/v6.0.0/geode-v6.0.0-ios.zip
+          unzip -o /tmp/geode-ios.zip -d geode-sdk/bin/6.0.0/
+
+      - name: Install Geode CLI
+        run: |
+          curl -fsSL -o /tmp/geode-cli.zip \
+            https://github.com/geode-sdk/cli/releases/download/v4.0.2/geode-cli-v4.0.2-mac.zip
+          unzip -o /tmp/geode-cli.zip -d /tmp/geode-cli
+          echo "/tmp/geode-cli" >> "$GITHUB_PATH"
+          chmod +x /tmp/geode-cli/geode
+
+      - name: Build
+        env:
+          GEODE_SDK: ${{ github.workspace }}/geode-sdk
+          GEODE_DONT_INSTALL_MODS: "ON"
+        run: ./scripts/build-ios.sh
+
+      - name: Stage artifact
+        run: |
+          mkdir -p dist/release
+          cp build-ios/livebyunix.p.geode dist/release/livebyunix.p-ios.geode
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-ios
+          path: dist/release/
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout Geode SDK v6.0.0
+        uses: actions/checkout@v4
+        with:
+          repository: geode-sdk/sdk
+          ref: v6.0.0
+          path: geode-sdk
+
+      - name: Download Geode binaries (Windows)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force geode-sdk/bin/6.0.0 | Out-Null
+          curl.exe -fsSL -o "$env:TEMP\geode-win.zip" `
+            https://github.com/geode-sdk/geode/releases/download/v6.0.0/geode-v6.0.0-win.zip
+          Expand-Archive "$env:TEMP\geode-win.zip" -DestinationPath geode-sdk/bin/6.0.0
+
+      - name: Install Geode CLI
+        shell: pwsh
+        run: |
+          curl.exe -fsSL -o "$env:TEMP\geode-cli.zip" `
+            https://github.com/geode-sdk/cli/releases/download/v4.0.2/geode-cli-v4.0.2-win.zip
+          Expand-Archive "$env:TEMP\geode-cli.zip" -DestinationPath geode-sdk-cli
+          Add-Content $env:GITHUB_PATH "$PWD\geode-sdk-cli"
+
+      - name: Build and test
+        shell: pwsh
+        env:
+          GEODE_SDK: ${{ github.workspace }}/geode-sdk
+          GEODE_DONT_INSTALL_MODS: "ON"
+        run: |
+          cmake -B build -G "Visual Studio 17 2022" -A x64 `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DGEODE_TARGET_PLATFORM=Win64
+          cmake --build build --config Release
+          ctest --test-dir build -C Release --output-on-failure
+
+      - name: Stage artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/release | Out-Null
+          Copy-Item build/livebyunix.p.geode dist/release/livebyunix.p-windows.geode
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: dist/release/
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout Geode SDK v6.0.0
+        uses: actions/checkout@v4
+        with:
+          repository: geode-sdk/sdk
+          ref: v6.0.0
+          path: geode-sdk
+
+      - name: Download Geode binaries (Android)
+        run: |
+          mkdir -p geode-sdk/bin/6.0.0
+          for abi in android32 android64; do
+            curl -fsSL -o "/tmp/geode-$abi.zip" \
+              "https://github.com/geode-sdk/geode/releases/download/v6.0.0/geode-v6.0.0-$abi.zip"
+            unzip -o "/tmp/geode-$abi.zip" -d geode-sdk/bin/6.0.0/
+          done
+
+      - name: Install Geode CLI
+        run: |
+          curl -fsSL -o /tmp/geode-cli.zip \
+            https://github.com/geode-sdk/cli/releases/download/v4.0.2/geode-cli-v4.0.2-linux.zip
+          unzip -o /tmp/geode-cli.zip -d /tmp/geode-cli
+          chmod +x /tmp/geode-cli/geode
+          echo "/tmp/geode-cli" >> "$GITHUB_PATH"
+
+      - name: Set up Android NDK
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "ndk;27.2.12479018" > /dev/null
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.2.12479018" >> "$GITHUB_ENV"
+
+      - name: Build
+        env:
+          GEODE_SDK: ${{ github.workspace }}/geode-sdk
+          GEODE_DONT_INSTALL_MODS: "ON"
+        run: ./scripts/build-android.sh
+
+      - name: Stage artifacts
+        run: |
+          mkdir -p dist/release
+          cp build-android64/livebyunix.p.geode dist/release/livebyunix.p-android64.geode
+          cp build-android32/livebyunix.p.geode dist/release/livebyunix.p-android32.geode
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-android
+          path: dist/release/
+
+  release:
+    needs: [macos, ios, windows, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: dist
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NOTES="Press P while playing Geometry Dash to instantly switch the current run into Practice Mode.
+
+          Requires Geometry Dash 2.2091 and Geode v6.0.0 or newer.
+
+          Assets:
+          - livebyunix.p-macos.geode — macOS (Apple Silicon + Intel)
+          - livebyunix.p-windows.geode — Windows x64
+          - livebyunix.p-ios.geode — iOS
+          - livebyunix.p-android64.geode / livebyunix.p-android32.geode — Android"
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/*.geode --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/*.geode \
+              --title "P $GITHUB_REF_NAME" --notes "$NOTES"
+          fi

@@ -1,0 +1,25 @@
+# Build output
+build/
+build-*/
+out/
+dist/
+
+# Packaged mods
+*.geode
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+
+# Platform files
+.DS_Store
+Thumbs.db
+*.user
+*.suo
+.vs/
+
+# IDE
+.idea/
+.vscode/

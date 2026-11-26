@@ -1,0 +1,95 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout Geode SDK v6.0.0
+        uses: actions/checkout@v4
+        with:
+          repository: geode-sdk/sdk
+          ref: v6.0.0
+          path: geode-sdk
+
+      - name: Download Geode binaries (macOS)
+        run: |
+          mkdir -p geode-sdk/bin/6.0.0
+          curl -fsSL -o /tmp/geode-mac.zip \
+            https://github.com/geode-sdk/geode/releases/download/v6.0.0/geode-v6.0.0-mac.zip
+          unzip -o /tmp/geode-mac.zip -d geode-sdk/bin/6.0.0/
+
+      - name: Install Geode CLI
+        run: |
+          curl -fsSL -o /tmp/geode-cli.zip \
+            https://github.com/geode-sdk/cli/releases/download/v4.0.2/geode-cli-v4.0.2-mac.zip
+          unzip -o /tmp/geode-cli.zip -d /tmp/geode-cli
+          echo "/tmp/geode-cli" >> "$GITHUB_PATH"
+          chmod +x /tmp/geode-cli/geode
+
+      - name: Build and test
+        env:
+          GEODE_SDK: ${{ github.workspace }}/geode-sdk
+          GEODE_DONT_INSTALL_MODS: "ON"
+        run: |
+          ./scripts/build-macos.sh
+          ctest --test-dir build --output-on-failure
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: livebyunix.p-macos
+          path: build/livebyunix.p.geode
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout Geode SDK v6.0.0
+        uses: actions/checkout@v4
+        with:
+          repository: geode-sdk/sdk
+          ref: v6.0.0
+          path: geode-sdk
+
+      - name: Download Geode binaries (Windows)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force geode-sdk/bin/6.0.0 | Out-Null
+          curl.exe -fsSL -o "$env:TEMP\geode-win.zip" `
+            https://github.com/geode-sdk/geode/releases/download/v6.0.0/geode-v6.0.0-win.zip
+          Expand-Archive "$env:TEMP\geode-win.zip" -DestinationPath geode-sdk/bin/6.0.0
+
+      - name: Install Geode CLI
+        shell: pwsh
+        run: |
+          curl.exe -fsSL -o "$env:TEMP\geode-cli.zip" `
+            https://github.com/geode-sdk/cli/releases/download/v4.0.2/geode-cli-v4.0.2-win.zip
+          Expand-Archive "$env:TEMP\geode-cli.zip" -DestinationPath geode-sdk-cli
+          Add-Content $env:GITHUB_PATH "$PWD\geode-sdk-cli"
+
+      - name: Build and test
+        shell: pwsh
+        env:
+          GEODE_SDK: ${{ github.workspace }}/geode-sdk
+          GEODE_DONT_INSTALL_MODS: "ON"
+        run: |
+          cmake -B build -G "Visual Studio 17 2022" -A x64 `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DGEODE_TARGET_PLATFORM=Win64
+          cmake --build build --config Release
+          ctest --test-dir build -C Release --output-on-failure
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: livebyunix.p-windows
+          path: build/livebyunix.p.geode
