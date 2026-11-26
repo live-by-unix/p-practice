@@ -58,6 +58,10 @@ cmake -B build -DGEODE_SDK=/path/to/Geode/sdk
 cmake --build build
 ```
 
+> **Note:** if your project path contains spaces, use the Ninja generator
+> (`geode build` respects `CMAKE_GENERATOR`, e.g. `export CMAKE_GENERATOR=Ninja`)
+> — the default Makefiles generator cannot handle spaces in the path.
+
 The build produces `build/livebyunix.p.geode` (and installs it into your Geode mods folder unless `GEODE_DONT_INSTALL_MODS=ON` is set).
 
 Platform notes:
