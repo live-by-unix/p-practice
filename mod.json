@@ -8,13 +8,13 @@
 	},
 	"id": "livebyunix.p",
 	"name": "P",
-	"version": "v1.0.3",
+	"version": "v1.0.4",
 	"developer": "live-by-unix",
 	"description": "Press P while playing a level to instantly switch the current run into Practice Mode. No restart, no interruption.",
 
 	"repository": "https://github.com/live-by-unix/p-practice",
 
-	"tags": [ "utility", "gameplay", "practice" ],
+	"tags": [ "utility", "gameplay" ],
 
 	"settings": {
 		"practice-mode": {
