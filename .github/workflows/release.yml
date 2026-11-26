@@ -53,49 +53,6 @@ jobs:
           name: release-macos
           path: dist/release/
 
-  ios:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Checkout Geode SDK v6.0.0
-        uses: actions/checkout@v4
-        with:
-          repository: geode-sdk/sdk
-          ref: v6.0.0
-          path: geode-sdk
-
-      - name: Download Geode binaries (iOS)
-        run: |
-          mkdir -p geode-sdk/bin/6.0.0
-          curl -fsSL -o /tmp/geode-ios.zip \
-            https://github.com/geode-sdk/geode/releases/download/v6.0.0/geode-v6.0.0-ios.zip
-          unzip -o /tmp/geode-ios.zip -d geode-sdk/bin/6.0.0/
-
-      - name: Install Geode CLI
-        run: |
-          curl -fsSL -o /tmp/geode-cli.zip \
-            https://github.com/geode-sdk/cli/releases/download/v4.0.2/geode-cli-v4.0.2-mac.zip
-          unzip -o /tmp/geode-cli.zip -d /tmp/geode-cli
-          echo "/tmp/geode-cli" >> "$GITHUB_PATH"
-          chmod +x /tmp/geode-cli/geode
-
-      - name: Build
-        env:
-          GEODE_SDK: ${{ github.workspace }}/geode-sdk
-          GEODE_DONT_INSTALL_MODS: "ON"
-        run: ./scripts/build-ios.sh
-
-      - name: Stage artifact
-        run: |
-          mkdir -p dist/release
-          cp build-ios/livebyunix.p.geode dist/release/livebyunix.p-ios.geode
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: release-ios
-          path: dist/release/
-
   windows:
     runs-on: windows-latest
     steps:
@@ -156,65 +113,8 @@ jobs:
           name: release-windows
           path: dist/release/
 
-  android:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Checkout Geode SDK v6.0.0
-        uses: actions/checkout@v4
-        with:
-          repository: geode-sdk/sdk
-          ref: v6.0.0
-          path: geode-sdk
-
-      - name: Download Geode binaries (Android)
-        run: |
-          mkdir -p geode-sdk/bin/6.0.0
-          for abi in android32 android64; do
-            curl -fsSL -o "/tmp/geode-$abi.zip" \
-              "https://github.com/geode-sdk/geode/releases/download/v6.0.0/geode-v6.0.0-$abi.zip"
-            unzip -o "/tmp/geode-$abi.zip" -d geode-sdk/bin/6.0.0/
-          done
-
-      - name: Install Geode CLI
-        run: |
-          curl -fsSL -o /tmp/geode-cli.zip \
-            https://github.com/geode-sdk/cli/releases/download/v4.0.2/geode-cli-v4.0.2-linux.zip
-          unzip -o /tmp/geode-cli.zip -d /tmp/geode-cli
-          chmod +x /tmp/geode-cli/geode
-          echo "/tmp/geode-cli" >> "$GITHUB_PATH"
-
-      - name: Install Android NDK
-        run: |
-          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
-          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          if [ ! -x "$SDKM" ]; then
-            SDKM="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | sort | tail -1)"
-          fi
-          yes | "$SDKM" --licenses > /dev/null || true
-          "$SDKM" "ndk;30.0.16248370" > /dev/null
-          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/30.0.16248370" >> "$GITHUB_ENV"
-
-      - name: Build
-        env:
-          GEODE_SDK: ${{ github.workspace }}/geode-sdk
-          GEODE_DONT_INSTALL_MODS: "ON"
-        run: ./scripts/build-android.sh
-
-      - name: Stage artifacts
-        run: |
-          mkdir -p dist/release
-          cp build-android64/livebyunix.p.geode dist/release/livebyunix.p-android64.geode
-          cp build-android32/livebyunix.p.geode dist/release/livebyunix.p-android32.geode
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: release-android
-          path: dist/release/
-
   release:
-    needs: [macos, ios, windows, android]
+    needs: [macos, windows]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -234,8 +134,8 @@ jobs:
           Assets:
           - livebyunix.p-macos.geode — macOS (Apple Silicon + Intel)
           - livebyunix.p-windows.geode — Windows x64
-          - livebyunix.p-ios.geode — iOS
-          - livebyunix.p-android64.geode / livebyunix.p-android32.geode — Android"
+          - livebyunix.p-ios.geode — iOS (built locally)
+          - livebyunix.p-android64.geode / livebyunix.p-android32.geode — Android (built locally)"
           if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" dist/*.geode --clobber
           else
