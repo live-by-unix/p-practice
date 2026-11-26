@@ -24,7 +24,10 @@ if (-not (Get-Command geode -ErrorAction SilentlyContinue)) {
 
 Write-Host "Using Geode SDK: $env:GEODE_SDK"
 
-cmake -B build -G "Visual Studio 17 2022" -A x64 -DGEODE_SDK="$env:GEODE_SDK"
+$extraArgs = @()
+if ($env:GEODE_DONT_INSTALL_MODS) { $extraArgs += "-DGEODE_DONT_INSTALL_MODS=ON" }
+
+cmake -B build -G "Visual Studio 17 2022" -A x64 -DGEODE_SDK="$env:GEODE_SDK" @extraArgs
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 cmake --build build --config Release
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

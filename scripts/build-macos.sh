@@ -22,7 +22,12 @@ fi
 
 echo "Using Geode SDK: $GEODE_SDK"
 
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DGEODE_SDK="$GEODE_SDK"
+EXTRA_CMAKE_ARGS=()
+if [ -n "${GEODE_DONT_INSTALL_MODS:-}" ]; then
+    EXTRA_CMAKE_ARGS+=("-DGEODE_DONT_INSTALL_MODS=ON")
+fi
+
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DGEODE_SDK="$GEODE_SDK" "${EXTRA_CMAKE_ARGS[@]}"
 cmake --build build --config Release -j"$(sysctl -n hw.ncpu)"
 
 echo "Built: build/livebyunix.p.geode"
