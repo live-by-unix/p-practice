@@ -42,8 +42,10 @@ if [ -n "${GEODE_DONT_INSTALL_MODS:-}" ]; then
 fi
 
 for ABI in arm64-v8a armeabi-v7a; do
-    SUFFIX="${ABI##*-}"
-    [ "$SUFFIX" = "v8a" ] && SUFFIX="64"
+    case "$ABI" in
+        arm64-v8a)   SUFFIX=64 ;;
+        armeabi-v7a) SUFFIX=32 ;;
+    esac
     BUILD_DIR="build-android$SUFFIX"
 
     echo "=== Building Android $ABI ($BUILD_DIR) ==="
